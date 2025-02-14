@@ -195,29 +195,34 @@ def instance(driver,actions,instance):
 
 
 def usage_time(driver,actions,usage_time):
-    time.sleep(0.6)
-    pyautogui.hotkey('ctrl', 'f')
-    time.sleep(0.6)
+    if usage_time==730:
+        print("✅ Usage time selected")
+        pass
     
-    pyautogui.typewrite('Total instance usage time')
-    time.sleep(0.6)
-    
-    pyautogui.press('esc')
-    time.sleep(0.6)
-    
-    actions.send_keys(Keys.ENTER).perform()
-    
-    for _ in range(3):
-        actions.send_keys(Keys.TAB).perform()
+    else:
+        time.sleep(0.6)
+        pyautogui.hotkey('ctrl', 'f')
+        time.sleep(0.6)
+        
+        pyautogui.typewrite('Total instance usage time')
+        time.sleep(0.6)
+        
+        pyautogui.press('esc')
+        time.sleep(0.6)
+        
+        actions.send_keys(Keys.ENTER).perform()
+        
+        for _ in range(3):
+            actions.send_keys(Keys.TAB).perform()
+            time.sleep(0.2)
         time.sleep(0.2)
-    time.sleep(0.2)
-    actions.send_keys(usage_time).perform()
-    time.sleep(0.2)
-    for _ in range(2):
-        actions.send_keys(Keys.TAB).perform()
+        actions.send_keys(usage_time).perform()
         time.sleep(0.2)
-    
-    print("✅ Usage time selected")
+        for _ in range(2):
+            actions.send_keys(Keys.TAB).perform()
+            time.sleep(0.2)
+        
+        print("✅ Usage time selected")
 
 
 
@@ -511,8 +516,7 @@ def sud_pricing(driver,actions,service_type_value,region,cloud_sql_edition_value
     #Specify_usage_time(driver,actions)
     instance(driver,actions,instance_value)
     time.sleep(0.3)
-    if usage_time_value>0:
-        usage_time(driver,actions,usage_time_value)
+    usage_time(driver,actions,usage_time_value)
     time.sleep(0.3)
     select_sql_instance_type(driver,actions,instance_type)
     time.sleep(0.3)
@@ -546,8 +550,7 @@ def one_year_pricing(driver,actions,service_type_value,region,cloud_sql_edition_
     cloud_sql_edition(driver,actions,cloud_sql_edition_value)
     #Specify_usage_time(driver,actions)
     instance(driver,actions,instance_value)
-    if usage_time_value >0:
-        usage_time(driver,actions,usage_time_value)
+    usage_time(driver,actions,usage_time_value)
     time.sleep(0.3)
     select_sql_instance_type(driver,actions,instance_type)
     time.sleep(0.3)
@@ -597,8 +600,7 @@ def three_year_pricing(driver,actions,service_type_value,region,cloud_sql_editio
     #Specify_usage_time(driver,actions)
     instance(driver,actions,instance_value)
     time.sleep(0.3)
-    if usage_time_value>0:
-        usage_time(driver,actions,usage_time_value)
+    usage_time(driver,actions,usage_time_value)
     time.sleep(0.3)
     select_sql_instance_type(driver,actions,instance_type)
     time.sleep(5)
@@ -660,7 +662,7 @@ def read_input_values(file_path):# Read the input sheet
         "Datacenter Location": "",
         "Cloud SQL ": "Enterprise",
         "No. of Instances": 1,
-        "Avg no. of hrs": 0,
+        "Avg no. of hrs": 730,
         "Instance Type": "db-n1-standard-2",
         "HA/Non-HA": "Non-HA",
         "Disk Type": "HDD",
