@@ -511,7 +511,8 @@ def sud_pricing(driver,actions,service_type_value,region,cloud_sql_edition_value
     #Specify_usage_time(driver,actions)
     instance(driver,actions,instance_value)
     time.sleep(0.3)
-    usage_time(driver,actions,usage_time_value)
+    if usage_time_value>0:
+        usage_time(driver,actions,usage_time_value)
     time.sleep(0.3)
     select_sql_instance_type(driver,actions,instance_type)
     time.sleep(0.3)
@@ -545,7 +546,8 @@ def one_year_pricing(driver,actions,service_type_value,region,cloud_sql_edition_
     cloud_sql_edition(driver,actions,cloud_sql_edition_value)
     #Specify_usage_time(driver,actions)
     instance(driver,actions,instance_value)
-    usage_time(driver,actions,usage_time_value)
+    if usage_time_value >0:
+        usage_time(driver,actions,usage_time_value)
     time.sleep(0.3)
     select_sql_instance_type(driver,actions,instance_type)
     time.sleep(0.3)
@@ -595,7 +597,8 @@ def three_year_pricing(driver,actions,service_type_value,region,cloud_sql_editio
     #Specify_usage_time(driver,actions)
     instance(driver,actions,instance_value)
     time.sleep(0.3)
-    usage_time(driver,actions,usage_time_value)
+    if usage_time_value>0:
+        usage_time(driver,actions,usage_time_value)
     time.sleep(0.3)
     select_sql_instance_type(driver,actions,instance_type)
     time.sleep(5)
@@ -657,7 +660,7 @@ def read_input_values(file_path):# Read the input sheet
         "Datacenter Location": "",
         "Cloud SQL ": "Enterprise",
         "No. of Instances": 1,
-        "Avg no. of hrs": 730,
+        "Avg no. of hrs": 0,
         "Instance Type": "db-n1-standard-2",
         "HA/Non-HA": "Non-HA",
         "Disk Type": "HDD",
