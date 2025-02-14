@@ -741,6 +741,8 @@ def main():
     save_to_excel(results, "pricing_summary.xlsx")
     print("✅ All pricing done and saved in pricing_summary.xlsx")
 
+
+
 if __name__ == "__main__":
     start_time=time.time()
     main()

@@ -780,9 +780,9 @@ def main():
         if index == 0:
             home_page(driver,actions)
         if int(row["Avg no. of hrs"]) < 730:
-            one_year_price, one_year_current_url = sud_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"], row["Cloud SQL "],float(row["No. of Instances"]), int(row["Avg no. of hrs"]), str(row["Instance Type"]),row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),int(row["Backup"]),int(row["vCPUs"]),int(row["RAM"]))
-            results[index]["One Year Price"] = one_year_price
-            results[index]["One Year URL"] = one_year_current_url
+            three_year_price, three_year_current_url = sud_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"], row["Cloud SQL "],float(row["No. of Instances"]), int(row["Avg no. of hrs"]), str(row["Instance Type"]),row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),int(row["Backup"]),int(row["vCPUs"]),int(row["RAM"]))
+            results[index]["three Year Price"] = three_year_price
+            results[index]["three Year URL"] = three_year_current_url
             
             
             
