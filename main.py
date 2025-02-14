@@ -640,7 +640,7 @@ def three_year_pricing(driver,actions,service_type_value,region,cloud_sql_editio
     
     print(price,current_url)
     print("✅ Three year pricing selected")
-    return current_url, price
+    return  price,current_url
 
 
 #========================================================================================================#
