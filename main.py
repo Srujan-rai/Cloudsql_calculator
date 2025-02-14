@@ -117,7 +117,7 @@ def cloud_sql_edition(driver,actions,edition):
     pyautogui.hotkey('ctrl', 'f')
     time.sleep(0.6)
     
-    pyautogui.typewrite('Cloud SQL Edition')
+    pyautogui.typewrite('Cloud SQL  Edition')
     time.sleep(0.6)
     
     pyautogui.press('esc')
@@ -291,6 +291,8 @@ def vcpu_handle(driver,actions,vcpu,ram):
         
         time.sleep(0.6)
         actions.send_keys(vcpu).perform()
+        time.sleep(0.2)
+        actions.send_keys(Keys.TAB).perform()
         print(f"the vcpu is {vcpu}")
         time.sleep(0.6)
         
@@ -342,6 +344,8 @@ def vcpu_handle(driver,actions,vcpu,ram):
 
         pyautogui.write(str(ram), interval=0.1)
         pyautogui.press("enter")
+        time.sleep(0.2)
+        actions.send_keys(Keys.TAB).perform()
         print("ram is selected")
 
     
@@ -384,8 +388,14 @@ def handle_Storage(driver,actions,size):
     for _ in range(3):
         actions.send_keys(Keys.TAB).perform()
         time.sleep(0.2)
-    size=int(size)
-    actions.send_keys(size).perform()
+    actions.send_keys(Keys.BACKSPACE).perform()
+    time.sleep(0.2)
+    actions.send_keys(Keys.BACKSPACE).perform()
+    time.sleep(0.2)
+    actions.send_keys(Keys.BACKSPACE).perform()
+
+    time.sleep(0.6)
+    pyautogui.typewrite(str(size))
     time.sleep(0.6)
     for _ in range(2):
         actions.send_keys(Keys.TAB).perform()
@@ -414,6 +424,8 @@ def handle_storage_type(driver,actions):
         time.sleep(0.2)
     
     actions.send_keys(Keys.ARROW_RIGHT).perform()
+    time.sleep(0.2)
+    actions.send_keys(Keys.ENTER).perform()
     
     print("✅ Storage type selected")
     
@@ -542,7 +554,7 @@ def one_year_pricing(driver,actions,service_type_value,region,cloud_sql_edition_
     if HA=="HA":
         enable_high_availability(driver,actions,HA)
     handle_Storage(driver,actions,size)
-    if storage_type=="HDD":
+    if storage_type.upper()=="HDD":
         handle_storage_type(driver,actions) 
     
     backup_size(driver,actions,backup_size_value)
@@ -641,9 +653,9 @@ def read_input_values(file_path):# Read the input sheet
         df = pd.read_excel(file_path)
         
     df.fillna({
-        "SQL Type": "MySQL",
-        "Datacenter Location": "us-central1",
-        "Cloud SQL": "Enterprise",
+        "SQL Type": "",
+        "Datacenter Location": "",
+        "Cloud SQL ": "Enterprise",
         "No. of Instances": 1,
         "Avg no. of hrs": 730,
         "Instance Type": "db-n1-standard-2",
@@ -676,68 +688,108 @@ def setup_driver():
     return driver
 
 def main():
-    file_path="jane new GcpData- - CloudSql.csv"
-    df = read_input_values(file_path) 
-    results = [{
-        "SL No": index + 1,
-        "Instance": str(row["No. of Instances"]),
-        "Cloud SQL Edition": row["Cloud SQL "],
-        "SUD Price": "",
-        "SUD URL": "",
-        "One Year Price": "",
-        "One Year URL": "",
-        "Three Year Price": "",
-        "Three Year URL": ""
-    } for index, row in df.iterrows()]
-
+    file_path = "jane new GcpData- - CloudSql.csv"
+    df = read_input_values(file_path)
+    
+    results = []
+    
+    for index, row in df.iterrows(  ):
+        # Validation checks
+        error_message = ""
+        if not row["SQL Type"] or not row["Datacenter Location"] or not row["No. of Instances"]:
+            error_message = "Missing required values (SQL Type, Datacenter Location, No. of Instances)"
+        
+        row["Error"] = error_message
+        results.append(row)
+        
+    df = pd.DataFrame(results)
+    save_to_excel(df, "processed_data.xlsx")
+    
+    if df["Error"].str.contains("Missing required values|Storage Amt must be greater than 10.74").any():
+        print("❌ Errors found in some rows. Check 'processed_data.xlsx' for details.")
+    else:
+        print("✅ All data is valid. Proceeding with processing.")
+    
+    df = df[df["Error"] == ""]  # Filter out rows with errors
+    if df.empty:
+        print("⚠ No valid rows to process. Exiting...")
+        return
 
     driver = setup_driver()
     actions = ActionChains(driver)
     for index, row in df.iterrows():
         if index == 0:
-            home_page(driver,actions)
+            home_page(driver, actions)
         
+        sud_price, sud_current_url = sud_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"],
+                                                  row["Cloud SQL "], float(row["No. of Instances"]),
+                                                  int(row["Avg no. of hrs"]), str(row["Instance Type"]),
+                                                  row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),
+                                                  int(row["Backup"]), int(row["vCPUs"]), int(row["RAM"]))
         
-        sud_price, sud_current_url = sud_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"], row["Cloud SQL "],float(row["No. of Instances"]), int(row["Avg no. of hrs"]), str(row["Instance Type"]),row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),int(row["Backup"]),int(row["vCPUs"]),int(row["RAM"]))
+        df.at[index, "SUD Price"] = sud_price
+        df.at[index, "SUD URL"] = sud_current_url
         
-        results[index]["SUD Price"] = sud_price
-        results[index]["SUD URL"] = sud_current_url
+        # Skip One-Year and Three-Year if conditions met
+        if int(row["Avg no. of hrs"]) < 730 or row["Instance Type"] == "f1-micro":
+            df.at[index, "One Year Price"] = sud_price
+            df.at[index, "One Year URL"] = sud_current_url
+            df.at[index, "Three Year Price"] = sud_price
+            df.at[index, "Three Year URL"] = sud_current_url
+            continue
+        
         if index < len(df) - 1:
-            add_to_estimate(driver,actions)
-            
+            add_to_estimate(driver, actions)
     driver.quit()
     
     # Processing One-Year Pricing
     driver = setup_driver()
     actions = ActionChains(driver)
     for index, row in df.iterrows():
+        if df.at[index, "One Year Price"]:  # Skip already processed rows
+            continue
+        
         if index == 0:
-            home_page(driver,actions)
-        one_year_price, one_year_current_url = one_year_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"], row["Cloud SQL "],float(row["No. of Instances"]), int(row["Avg no. of hrs"]), str(row["Instance Type"]),row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),int(row["Backup"]),int(row["vCPUs"]),int(row["RAM"]))
-        results[index]["One Year Price"] = one_year_price
-        results[index]["One Year URL"] = one_year_current_url
+            home_page(driver, actions)
+        
+        one_year_price, one_year_current_url = one_year_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"],
+                                                                row["Cloud SQL "], float(row["No. of Instances"]),
+                                                                int(row["Avg no. of hrs"]), str(row["Instance Type"]),
+                                                                row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),
+                                                                int(row["Backup"]), int(row["vCPUs"]), int(row["RAM"]))
+        
+        df.at[index, "One Year Price"] = one_year_price
+        df.at[index, "One Year URL"] = one_year_current_url
+        
         if index < len(df) - 1:
-            add_to_estimate(driver,actions)
+            add_to_estimate(driver, actions)
     driver.quit()
     
     # Processing Three-Year Pricing
     driver = setup_driver()
     actions = ActionChains(driver)
-    
-    
     for index, row in df.iterrows():
+        if df.at[index, "Three Year Price"]:  # Skip already processed rows
+            continue
+        
         if index == 0:
-            home_page(driver,actions)
-        three_year_price, three_year_current_url = three_year_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"], row["Cloud SQL "],float(row["No. of Instances"]), int(row["Avg no. of hrs"]), str(row["Instance Type"]),row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),int(row["Backup"]),int(row["vCPUs"]),int(row["RAM"]))
-        results[index]["Three Year Price"] = three_year_current_url
-        results[index]["Three Year URL"] = three_year_price
+            home_page(driver, actions)
+        
+        three_year_price, three_year_current_url = three_year_pricing(driver, actions, row["SQL Type"], row["Datacenter Location"],
+                                                                      row["Cloud SQL "], float(row["No. of Instances"]),
+                                                                      int(row["Avg no. of hrs"]), str(row["Instance Type"]),
+                                                                      row["HA/Non-HA"], row["Disk Type"], int(row["Storage Amt"]),
+                                                                      int(row["Backup"]), int(row["vCPUs"]), int(row["RAM"]))
+        
+        df.at[index, "Three Year Price"] = three_year_price
+        df.at[index, "Three Year URL"] = three_year_current_url
+        
         if index < len(df) - 1:
-            add_to_estimate(driver,actions)
+            add_to_estimate(driver, actions)
     driver.quit()
     
-    save_to_excel(results, "pricing_summary.xlsx")
+    save_to_excel(df, "pricing_summary.xlsx")
     print("✅ All pricing done and saved in pricing_summary.xlsx")
-
 
 if __name__ == "__main__":
     start_time=time.time()

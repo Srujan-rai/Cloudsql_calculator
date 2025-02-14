@@ -690,7 +690,7 @@ def main():
         "Three Year URL": ""
     } for index, row in df.iterrows()]
 
-
+    #sud pricing
     driver = setup_driver()
     actions = ActionChains(driver)
     for index, row in df.iterrows():
@@ -707,6 +707,8 @@ def main():
             
     driver.quit()
     
+    
+    
     # Processing One-Year Pricing
     driver = setup_driver()
     actions = ActionChains(driver)
@@ -719,6 +721,7 @@ def main():
         if index < len(df) - 1:
             add_to_estimate(driver,actions)
     driver.quit()
+    
     
     # Processing Three-Year Pricing
     driver = setup_driver()
@@ -737,7 +740,6 @@ def main():
     
     save_to_excel(results, "pricing_summary.xlsx")
     print("✅ All pricing done and saved in pricing_summary.xlsx")
-
 
 if __name__ == "__main__":
     start_time=time.time()
