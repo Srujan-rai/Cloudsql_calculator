@@ -23,6 +23,40 @@ from flask import Flask, request,jsonify
 import pyperclip
 
 
+app=Flask(__name__)
+
+
+sender_email = "srujan.int@niveussolutions.com"
+sender_password = "rmlh ikej rtmz ejme"
+subject = "Compute Calculation Results"
+body = "Please find the attached file for the results of the computation."
+file_path = "output_results.xlsx"
+
+
+
+
+def send_email_with_attachment(sender_email, sender_password, recipient_email, subject, body, file_path):
+    try:
+        
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
+        msg.set_content(body)
+
+        
+        with open(file_path, 'rb') as file:
+            file_data = file.read()
+            file_name = file_path.split('/')[-1]  # Get the file name from the path
+            msg.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
+
+       
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(sender_email, sender_password)
+            smtp.send_message(msg)
+        print("Email sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 
 
@@ -647,6 +681,35 @@ def three_year_pricing(driver,actions,service_type_value,region,cloud_sql_editio
     print("✅ Three year pricing selected")
     return  price,current_url
 
+def extract_sheet_id(sheet_url):
+    pattern = r"https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9-_]+)"
+    match = re.search(pattern, sheet_url)
+    if match:
+        return match.group(1)
+    else:
+        raise ValueError("Invalid Google Sheet URL")
+
+
+
+def download_sheet(sheet_url):
+        try:
+            print("downloading the sheet !!")
+            sheet_id = extract_sheet_id(sheet_url)
+            csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+            response = requests.get(csv_url)
+
+            if response.status_code == 200:
+                with open("cloudSQL_input_sheet.csv", "wb") as f:
+                    f.write(response.content)
+                print("Google Sheet downloaded as cloudSQL_input_sheet.csv")
+            else:
+                print("Failed to download sheet. HTTP Status Code:", response.status_code)
+        except ValueError as e:
+            print(e)
+        except Exception as e:
+            print("An error occurred:", e)
+
+
 
 #========================================================================================================#
 
@@ -692,8 +755,13 @@ def setup_driver():
     driver.implicitly_wait(10)
     return driver
 
-def main():
-    file_path = "jane new GcpData- - CloudSql.csv"
+def main(sheet,email):
+    
+    download_sheet(sheet)
+    
+    file_path = "cloudSQL_input_sheet.csv"
+    
+    
     df = read_input_values(file_path)
     
     results = []
@@ -801,15 +869,24 @@ def main():
             add_to_estimate(driver,actions)
     driver.quit()
     
-    save_to_excel(results, "pricing_summary.xlsx")
+    save_to_excel(results, "CloudSQL_pricing_summary.xlsx")
+    send_email_with_attachment(sender_email, sender_password, email, subject, body, "CloudSQL_pricing_summary.xlsx")
     print("✅ All pricing done and saved in pricing_summary.xlsx")
+
+
+@app.route('/calculate',methods=["POST"])
+def run_automation():
+    sheet = request.form.get('sheet')
+    email = request.form.get('email')
+    
+    main(sheet,email)
+    
+    return "process completed sucessfully"
+
 
 
 
 
 
 if __name__ == "__main__":
-    start_time=time.time()
-    main()
-    stop_time=time.time()
-    print(f"Time taken is {stop_time-start_time}")
+    app.run(debug=True,use_reloader=False,host='0.0.0.0')

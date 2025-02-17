@@ -659,6 +659,32 @@ def read_input_values(file_path):# Read the input sheet
 def save_to_excel(data, filename):
     df = pd.DataFrame(data)
     df.to_excel(filename, index=False)
+def extract_sheet_id(sheet_url):
+    pattern = r"https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9-_]+)"
+    match = re.search(pattern, sheet_url)
+    if match:
+        return match.group(1)
+    else:
+        raise ValueError("Invalid Google Sheet URL")
+
+def download_sheet(sheet_url):
+        try:
+            print("downloading the sheet !!")
+            sheet_id = extract_sheet_id(sheet_url)
+            csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+            response = requests.get(csv_url)
+
+            if response.status_code == 200:
+                with open("sheet.csv", "wb") as f:
+                    f.write(response.content)
+                print("Google Sheet downloaded as sheet.csv")
+            else:
+                print("Failed to download sheet. HTTP Status Code:", response.status_code)
+        except ValueError as e:
+            print(e)
+        except Exception as e:
+            print("An error occurred:", e)
+
 
     
 def setup_driver():
