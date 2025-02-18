@@ -768,13 +768,18 @@ def main(sheet,email):
     
     for index, row in df.iterrows(  ):
         # Validation checks
-        error_message = ""
+        error_message = []
+
         if not row["SQL Type"] or not row["Datacenter Location"] or not row["No. of Instances"]:
-            error_message = "Missing required values (SQL Type, Datacenter Location, No. of Instances)"
-        if row["SQL Type"].lower() == "PostgreSQL" and row["Storage Amt"] < 10.74:
-            error_message="storage amount cannot be less than 10.74"
-        
-        row["Error"] = error_message
+            error_message.append("Missing required values (SQL Type, Datacenter Location, No. of Instances)")
+
+        if row["SQL Type"].lower() == "postgresql" and row["Storage Amt"] < 10.74:
+            error_message.append("Storage amount cannot be less than 10.74")
+
+        if int(row["Avg no. of hrs"]) < 730 and int(row["No. of Instances"]) > 1:
+            error_message.append("Invalid configuration: More than one instance running for less than 730 hours is not logical.")
+
+        row["Error"] = "; ".join(error_message) if error_message else ""
         results.append(row)
         
     df = pd.DataFrame(results)
@@ -890,3 +895,4 @@ def run_automation():
 
 if __name__ == "__main__":
     app.run(debug=True,use_reloader=False,host='0.0.0.0')
+  
