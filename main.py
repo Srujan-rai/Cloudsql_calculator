@@ -695,7 +695,8 @@ def download_sheet(sheet_url):
         try:
             print("downloading the sheet !!")
             sheet_id = extract_sheet_id(sheet_url)
-            csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+            tab_name = "CloudSql"
+            csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={tab_name}"
             response = requests.get(csv_url)
 
             if response.status_code == 200:
@@ -778,6 +779,9 @@ def main(sheet,email):
 
         if int(row["Avg no. of hrs"]) < 730 and int(row["No. of Instances"]) > 1:
             error_message.append("Invalid configuration: More than one instance running for less than 730 hours is not logical.")
+            
+        if row["SQL Type"].lower() == "postgresql" and ((row["RAM"])<3.75 or int(row["RAM"])>624):
+            error_message.append("RAM cannot be less than 3.75 or greater then 624")
 
         row["Error"] = "; ".join(error_message) if error_message else ""
         results.append(row)
